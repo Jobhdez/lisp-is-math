@@ -22,6 +22,7 @@
 ;; dot product
 
 (define-element-wise * mul-vectors v v2)
+
 (defn dot-product [v v2]
   (reduce + (mul-vectors v v2)))
 
