@@ -26,6 +26,15 @@
 (defn dot-product [v v2]
   (reduce + (mul-v v v2)))
 
+;;; matrix matrix multiplication
+
+
+(defn mat-mul [m m2]
+  (letfn [(transpose [m] (apply mapv vector m))]
+    (map (fn [row]
+           (map (fn [col]
+                  (dot-product row col)) (transpose m2))) m)))
+
 ;; matrix  by scalar
 
 (define-element-wise mul-v mul-m)
