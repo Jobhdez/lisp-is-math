@@ -30,9 +30,9 @@
 
 (defn mat-mul [m m2]
   (letfn [(transpose [m] (apply mapv vector m))]
-    (map (fn [row]
-           (map (fn [col]
-                  (dot-product row col)) (transpose m2))) m)))
+    (map (fn [row] (map (fn [col] (dot-product row col))
+                        (transpose m2)))
+         m)))
 
 ;; matrix  by scalar
 
