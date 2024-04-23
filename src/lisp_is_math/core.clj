@@ -28,7 +28,6 @@
 
 ;;; matrix matrix multiplication
 
-
 (defn mat-mul [m m2]
   (letfn [(transpose [m] (apply mapv vector m))]
     (map (fn [row]
