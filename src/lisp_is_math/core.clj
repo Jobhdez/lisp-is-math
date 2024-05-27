@@ -1,5 +1,13 @@
 (ns lisp-is-math.core
-  (:require [clojure.math :as math]))
+  (:require [clojure.math :as math]
+            [cheshire.core :refer [generate-string parse-string]]
+            [org.httpkit.server :as server]
+            [compojure.route :as route]
+            [clojure.string :as str]
+            [clojure.data.json :as json]
+            [compojure.core :refer [defroutes GET POST PUT DELETE]]
+            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [next.jdbc :as jdbc]))
 
 (defmacro define-element-wise [function fn-name]
   `(defn ~(symbol (str fn-name)) [tensor# tensor2#]
@@ -78,3 +86,46 @@
 (define-element-wise-one-param  math/log10 log10-v)
 (define-element-wise-one-param log10-v log10-m)
 
+;;;; server
+
+(def db-config
+  {:dbtype "postgresql"
+   :dbname "lalgdb"
+   :host "localhost"
+   :user "lara"
+   :password "hello123"})
+
+(def db (jdbc/get-datasource db-config))
+
+(defn add-vectors-handlers [req]
+  (let [body (slurp (:body req))
+        body-params (parse-string body true)]
+    (println "body-params" body-params)
+    {:status 200
+     :headers {"Content-Type" "text/json"}
+     :body (-> (let [e1 (read-string (body-params :e1))
+                     e2 (read-string (body-params :e2))]
+                 (println "e1" e1)
+                 (println "e2" e2)
+                 (println "type" (type e1))
+                 (let [result (add-v e1 e2)]
+                   (println "result" result)
+                   (let [db-exp (format "insert into lalg_exps(e1, e2, result) values('%s', '%s', '%s')"
+                                       e1
+                                      e2
+                                      result)]
+                     (println "db-exp" db-exp)
+                   (jdbc/execute! db [db-exp])
+                   (json/write-str {:e1 e1 :e2 e2 :result (add-v e1 e2)})))))}))
+
+(defroutes app-routes
+  (POST "/api/exps" [] add-vectors-handlers))
+
+(defn -main
+  [& args]
+  (let [port (Integer/parseInt (or (System/getenv "PORT") "4000"))]
+    (server/run-server
+     (-> app-routes
+         (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false)))
+     {:port port})
+    (println (str "Webserver started at http://127.0.0.1:" port "/"))))
