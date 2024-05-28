@@ -132,10 +132,18 @@
      :headers {"Content-Type" "text/json"}
      :body (json/write-str (jdbc/execute! db [(format "select * from lalg_exps where id=%s" id)]))}))
 
+(defn delete-exp [req]
+  (let [id (-> req :params :id)]
+    (jdbc/execute! db [(format "delete from lalg_exps where id=%s" id)])
+    {:status 200
+     :headers {"Content-Type" "text/json"}
+     :body (json/write-str {:ok "delete success"})}))
+
 (defroutes app-routes
   (POST "/api/exps" [] add-vectors-handler)
   (GET "/api/exps" [] get-lalg-exps)
-  (GET "/api/exp" [] get-exp))
+  (GET "/api/exp" [] get-exp)
+  (DELETE "/api/exp/delete" [] delete-exp))
 
 (defn -main
   [& args]
