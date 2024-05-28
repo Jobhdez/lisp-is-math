@@ -97,7 +97,7 @@
 
 (def db (jdbc/get-datasource db-config))
 
-(defn add-vectors-handlers [req]
+(defn add-vectors-handler [req]
   (let [body (slurp (:body req))
         body-params (parse-string body true)]
     (println "body-params" body-params)
@@ -110,16 +110,32 @@
                  (println "type" (type e1))
                  (let [result (add-v e1 e2)]
                    (println "result" result)
+                   (println "result-type" (type result))
                    (let [db-exp (format "insert into lalg_exps(e1, e2, result) values('%s', '%s', '%s')"
                                        e1
                                       e2
-                                      result)]
+                                      (vec result))]
                      (println "db-exp" db-exp)
                    (jdbc/execute! db [db-exp])
                    (json/write-str {:e1 e1 :e2 e2 :result (add-v e1 e2)})))))}))
 
+(defn get-lalg-exps [req]
+  (let [exps (jdbc/execute! db ["select * from lalg_exps"])]
+    (println "exps" exps)
+    {:status 200
+     :headers {"Content-Type" "text/json"}
+     :body (json/write-str exps)}))
+
+(defn get-exp [req]
+  (let [id (-> req :params :id)]
+    {:status 200
+     :headers {"Content-Type" "text/json"}
+     :body (json/write-str (jdbc/execute! db [(format "select * from lalg_exps where id=%s" id)]))}))
+
 (defroutes app-routes
-  (POST "/api/exps" [] add-vectors-handlers))
+  (POST "/api/exps" [] add-vectors-handler)
+  (GET "/api/exps" [] get-lalg-exps)
+  (GET "/api/exp" [] get-exp))
 
 (defn -main
   [& args]
