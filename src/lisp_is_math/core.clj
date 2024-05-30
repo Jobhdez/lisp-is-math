@@ -117,7 +117,7 @@
                                       (vec result))]
                      (println "db-exp" db-exp)
                    (jdbc/execute! db [db-exp])
-                   (json/write-str {:e1 e1 :e2 e2 :result (add-v e1 e2)})))))}))
+                   (json/write-str {:e1 e1 :e2 e2 :result (vec result)})))))}))
 
 (defn get-lalg-exps [req]
   (let [exps (jdbc/execute! db ["select * from lalg_exps"])]
