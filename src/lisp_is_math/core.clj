@@ -97,27 +97,33 @@
 
 (def db (jdbc/get-datasource db-config))
 
-(defn add-vectors-handler [req]
-  (let [body (slurp (:body req))
-        body-params (parse-string body true)]
-    (println "body-params" body-params)
-    {:status 200
-     :headers {"Content-Type" "text/json"}
-     :body (-> (let [e1 (read-string (body-params :e1))
-                     e2 (read-string (body-params :e2))]
-                 (println "e1" e1)
-                 (println "e2" e2)
-                 (println "type" (type e1))
-                 (let [result (add-v e1 e2)]
-                   (println "result" result)
-                   (println "result-type" (type result))
-                   (let [db-exp (format "insert into lalg_exps(e1, e2, result) values('%s', '%s', '%s')"
-                                       e1
-                                      e2
-                                      (vec result))]
-                     (println "db-exp" db-exp)
-                   (jdbc/execute! db [db-exp])
-                   (json/write-str {:e1 e1 :e2 e2 :result (vec result)})))))}))
+(defn add [op]
+  (fn [req]
+    (let [body (slurp (:body req))
+          body-params (parse-string body true)]
+      (println "body-params" body-params)
+      {:status 200
+       :headers {"Content-Type" "text/json"}
+       :body (-> (let [e1 (read-string (body-params :e1))
+                       e2 (read-string (body-params :e2))]
+                   (println "e1" e1)
+                   (println "e2" e2)
+                   (println "type" (type e1))
+                   (let [result (op e1 e2)]
+                     (println "result" result)
+                     (println "result-type" (type result))
+                     (let [db-exp (format "insert into lalg_exps(e1, e2, result) values('%s', '%s', '%s')"
+                                          e1
+                                          e2
+                                          (vec result))]
+                       (println "db-exp" db-exp)
+                       (jdbc/execute! db [db-exp])
+                       (json/write-str {:e1 e1 :e2 e2 :result (vec result)})))))})))
+
+(def add-vectors-handler (add add-v))
+(def sub-vectors-handler (add sub-v))
+(def add-matrices-handler (add add-m))
+(def sub-matrices-handler (add sub-m))
 
 (defn get-lalg-exps [req]
   (let [exps (jdbc/execute! db ["select * from lalg_exps"])]
@@ -140,7 +146,10 @@
      :body (json/write-str {:ok "delete success"})}))
 
 (defroutes app-routes
-  (POST "/api/exps" [] add-vectors-handler)
+  (POST "/api/vectors/add" [] add-vectors-handler)
+  (POST "/api/vectors/sub" [] sub-vectors-handler)
+  (POST "/api/matrices/add" [] add-matrices-handler)
+  (POST "/api/matrices/sub" [] sub-matrices-handler)
   (GET "/api/exps" [] get-lalg-exps)
   (GET "/api/exp" [] get-exp)
   (DELETE "/api/exp/delete" [] delete-exp))
