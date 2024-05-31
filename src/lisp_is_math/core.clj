@@ -97,7 +97,7 @@
 
 (def db (jdbc/get-datasource db-config))
 
-(defn add [op]
+(defn compute [op]
   (fn [req]
     (let [body (slurp (:body req))
           body-params (parse-string body true)]
@@ -120,10 +120,10 @@
                        (jdbc/execute! db [db-exp])
                        (json/write-str {:e1 e1 :e2 e2 :result (vec result)})))))})))
 
-(def add-vectors-handler (add add-v))
-(def sub-vectors-handler (add sub-v))
-(def add-matrices-handler (add add-m))
-(def sub-matrices-handler (add sub-m))
+(def add-vectors-handler (compute add-v))
+(def sub-vectors-handler (compute sub-v))
+(def add-matrices-handler (compute add-m))
+(def sub-matrices-handler (compute sub-m))
 
 (defn get-lalg-exps [req]
   (let [exps (jdbc/execute! db ["select * from lalg_exps"])]
